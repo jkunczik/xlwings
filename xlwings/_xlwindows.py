@@ -76,6 +76,7 @@ from .utils import (
     read_config_sheet,
     rgb_to_int,
 )
+from .winutils import fullname_url_to_local_path_with_registry
 
 # Optional imports
 try:
@@ -900,12 +901,17 @@ class Book(base_classes.Book):
     def fullname(self):
         if "://" in self.xl.FullName:
             config = read_config_sheet(xlwings.Book(impl=self))
-            return fullname_url_to_local_path(
-                url=self.xl.FullName,
-                sheet_onedrive_consumer_config=config.get("ONEDRIVE_CONSUMER_WIN"),
-                sheet_onedrive_commercial_config=config.get("ONEDRIVE_COMMERCIAL_WIN"),
-                sheet_sharepoint_config=config.get("SHAREPOINT_WIN"),
-            )
+            try:
+                # Try to resolve the url using the windows registry.
+                return fullname_url_to_local_path_with_registry(url=self.xl.FullName)
+            except:
+                # If resolving with the registry fails, fall back to legacy solution
+                return fullname_url_to_local_path(
+                    url=self.xl.FullName,
+                    sheet_onedrive_consumer_config=config.get("ONEDRIVE_CONSUMER_WIN"),
+                    sheet_onedrive_commercial_config=config.get("ONEDRIVE_COMMERCIAL_WIN"),
+                    sheet_sharepoint_config=config.get("SHAREPOINT_WIN"),
+                )
         else:
             return self.xl.FullName
 
